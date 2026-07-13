@@ -81,9 +81,6 @@ export function DashboardPage() {
                 <Text fw={700} style={{ fontSize: 15 }}>
                   Mapa Territorial
                 </Text>
-                <Text size="11px" c="dimmed" tt="uppercase" style={{ letterSpacing: 1.2 }}>
-                  Localização geográfica dos imóveis · OpenFreeMap
-                </Text>
               </Box>
               <Button variant="default" size="xs" leftSection={<IconMaximize size={14} />} onClick={() => navigate('/mapa')}>
                 Tela cheia
