@@ -3,7 +3,8 @@ import { IconEdit, IconMapPin } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useManagingUnit } from '@/entities/managing-unit/managing-unit.hooks';
 import type { Property } from '@/entities/property/property.types';
-import { formatCoordinate, formatCurrency } from '@/shared/lib/format';
+import { formatCurrency } from '@/shared/lib/format';
+import { formatUtmZone, latLngToUtm } from '@/shared/lib/utm';
 import { usageCategoryLabels } from '@/shared/types/enums';
 import { PossessionBadge } from '@/shared/ui/PossessionBadge';
 
@@ -34,6 +35,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 export function PropertyDetailAside({ property }: { property: Property | null }) {
   const navigate = useNavigate();
   const { data: managingUnit } = useManagingUnit(property?.managingUnitId);
+  const utm = property ? latLngToUtm(property.latitude, property.longitude) : null;
 
   if (!property) {
     return (
@@ -65,9 +67,9 @@ export function PropertyDetailAside({ property }: { property: Property | null })
         </Text>
       </Box>
 
-      <Section label="⌖ Geolocalização">
-        <DetailRow label="Latitude" value={formatCoordinate(property.latitude)} />
-        <DetailRow label="Longitude" value={formatCoordinate(property.longitude)} />
+      <Section label={`⌖ Geolocalização · UTM ${utm ? formatUtmZone(utm) : ''}`}>
+        <DetailRow label="Coordenada E (Este)" value={`${utm?.easting.toFixed(2)} m`} />
+        <DetailRow label="Coordenada N (Norte)" value={`${utm?.northing.toFixed(2)} m`} />
       </Section>
 
       <Section label="Situação Jurídica e Destinação">

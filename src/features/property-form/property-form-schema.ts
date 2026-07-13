@@ -5,61 +5,55 @@ import { PossessionType, UsageCategory } from '@/shared/types/enums';
 // Espelha RegisterPropertyDto (backend) campo a campo — qualquer mudança no DTO precisa
 // ser refletida aqui para manter os dois lados sincronizados.
 const addressSchema = z.object({
-  street: z.string().min(1, 'Informe o logradouro'),
-  number: z.string().min(1, 'Informe o número'),
-  neighborhood: z.string().min(1, 'Informe o bairro'),
-  zipCode: z.string().min(1, 'Informe o CEP'),
+  street: z.string().optional(),
+  number: z.string().optional(),
+  neighborhood: z.string().optional(),
+  zipCode: z.string().optional(),
   reference: z.string().optional(),
 });
 
 const possessionContractSchema = z.object({
-  startDate: z.date({ message: 'Informe a data de início' }),
+  startDate: z.date().optional(),
   endDate: z.date().optional(),
   monthlyValue: z.number().positive().optional(),
   referenceValue: z.number().positive().optional(),
   grantor: z.string().optional(),
   lessor: z.string().optional(),
-  administrativeProcessNumber: z.string().min(1, 'Informe o número do processo/contrato'),
+  administrativeProcessNumber: z.string().optional(),
 });
 
 const currentYear = new Date().getFullYear();
 
-export const propertyFormSchema = z
-  .object({
-    registrationNumber: z.string().min(1, 'Informe a matrícula'),
-    notaryOffice: z.string().min(1, 'Informe o cartório'),
-    notarialDescription: z.string().min(1, 'Descreva o imóvel'),
-    address: addressSchema,
-    totalArea: z.number().positive('Área total deve ser maior que zero'),
-    builtArea: z.number().positive('Área construída deve ser maior que zero'),
-    latitude: z
-      .number()
-      .min(MIN_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`)
-      .max(MAX_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`),
-    longitude: z
-      .number()
-      .min(MIN_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`)
-      .max(MAX_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`),
-    managingUnitId: z.string().uuid('Selecione a unidade gestora'),
-    budgetUnit: z.string().optional(),
-    usageCategory: z.enum(UsageCategory),
-    possessionType: z.enum(PossessionType),
-    possessionContract: possessionContractSchema.optional(),
-    acquisitionYear: z
-      .number()
-      .int()
-      .min(1800)
-      .max(currentYear, `Ano de aquisição não pode ser posterior a ${currentYear}`),
-    originalValue: z.number().positive('Valor original deve ser maior que zero'),
-    publicPurpose: z.string().min(1, 'Descreva a finalidade pública'),
-  })
-  .refine(
-    (data) => data.possessionType === PossessionType.OWNED || data.possessionContract !== undefined,
-    {
-      message: 'Informe os dados do contrato de posse para imóveis não próprios',
-      path: ['possessionContract', 'administrativeProcessNumber'],
-    },
-  );
+export const propertyFormSchema = z.object({
+  registrationNumber: z.string().optional(),
+  notaryOffice: z.string().optional(),
+  notarialDescription: z.string().optional(),
+  address: addressSchema,
+  totalArea: z.number().positive('Área total deve ser maior que zero').optional(),
+  builtArea: z.number().positive('Área construída deve ser maior que zero').optional(),
+  latitude: z
+    .number()
+    .min(MIN_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`)
+    .max(MAX_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`)
+    .optional(),
+  longitude: z
+    .number()
+    .min(MIN_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`)
+    .max(MAX_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`)
+    .optional(),
+  managingUnitId: z.string().optional(),
+  budgetUnit: z.string().optional(),
+  usageCategory: z.enum(UsageCategory).optional(),
+  possessionType: z.enum(PossessionType).optional(),
+  possessionContract: possessionContractSchema.optional(),
+  acquisitionYear: z
+    .number()
+    .int()
+    .max(currentYear, `Ano de aquisição não pode ser posterior a ${currentYear}`)
+    .optional(),
+  originalValue: z.number().positive('Valor original deve ser maior que zero').optional(),
+  publicPurpose: z.string().optional(),
+});
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 

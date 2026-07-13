@@ -15,7 +15,7 @@ const valueFieldLabel: Record<Exclude<PossessionType, 'OWNED'>, string> = {
 
 export function PropertyPossessionFields({ form }: { form: UseFormReturnType<PropertyFormValues> }) {
   const possessionType = form.values.possessionType;
-  if (possessionType === PossessionType.OWNED) return null;
+  if (!possessionType || possessionType === PossessionType.OWNED) return null;
 
   const isMonthly = possessionType === PossessionType.RENTED;
 
@@ -62,7 +62,6 @@ export function PropertyPossessionFields({ form }: { form: UseFormReturnType<Pro
         <TextInput
           label="Nº do Contrato / Instrumento"
           placeholder="Ex: CT-2024-0042 ou Termo de Cessão nº..."
-          withAsterisk
           {...form.getInputProps('possessionContract.administrativeProcessNumber')}
         />
       </Group>

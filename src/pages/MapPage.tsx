@@ -32,7 +32,6 @@ export function MapPage() {
             Mapa <span style={{ color: "#1A5C2A", fontWeight: 600 }}>territorial</span> dos imóveis municipais
           </>
         }
-        subtitle="Visualização geográfica completa dos bens imóveis cadastrados, com filtros por categoria. Tiles OpenFreeMap via MapLibre GL."
       />
 
       <Box p={`32px ${PAGE_GUTTER_X}px 60px`}>

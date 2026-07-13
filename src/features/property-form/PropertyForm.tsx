@@ -19,7 +19,9 @@ import type { RegisterPropertyInput } from '@/entities/property/property.types';
 import { extractErrorMessage } from '@/shared/lib/api-client';
 import { estimateNetBookValue } from '@/shared/lib/depreciation-estimate';
 import { formatCurrency } from '@/shared/lib/format';
-import { usageCategoryLabels, possessionTypeLabels, PossessionType, type UsageCategory } from '@/shared/types/enums';
+import { CRATEUS_CENTER } from '@/shared/lib/map-config';
+import { formatUtmZone, latLngToUtm, utmToLatLng } from '@/shared/lib/utm';
+import { usageCategoryLabels, possessionTypeLabels, PossessionType, UsageCategory } from '@/shared/types/enums';
 import { RADIUS_MD } from '@/shared/ui/layout-constants';
 import { emptyPropertyFormValues, propertyFormSchema, type PropertyFormValues } from './property-form-schema';
 import { PropertyMiniMap } from './PropertyMiniMap';
@@ -43,10 +45,10 @@ function toRegisterInput(values: PropertyFormValues): RegisterPropertyInput {
         ? undefined
         : {
             ...values.possessionContract,
-            startDate: values.possessionContract.startDate.toISOString(),
+            startDate: values.possessionContract.startDate?.toISOString(),
             endDate: values.possessionContract.endDate?.toISOString(),
           },
-  };
+  } as unknown as RegisterPropertyInput;
 }
 
 export function PropertyForm({
@@ -77,9 +79,24 @@ export function PropertyForm({
   );
 
   const estimate = useMemo(
-    () => estimateNetBookValue(form.values.originalValue || 0, form.values.usageCategory, form.values.acquisitionYear),
+    () =>
+      estimateNetBookValue(
+        form.values.originalValue || 0,
+        form.values.usageCategory ?? UsageCategory.OTHER,
+        form.values.acquisitionYear ?? new Date().getFullYear(),
+      ),
     [form.values.originalValue, form.values.usageCategory, form.values.acquisitionYear],
   );
+
+  const latitude = form.values.latitude ?? CRATEUS_CENTER[1];
+  const longitude = form.values.longitude ?? CRATEUS_CENTER[0];
+  const utm = useMemo(() => latLngToUtm(latitude, longitude), [latitude, longitude]);
+
+  const handleUtmChange = (field: 'easting' | 'northing', value: number) => {
+    const { lat, lng } = utmToLatLng({ ...utm, [field]: value });
+    form.setFieldValue('latitude', Number(lat.toFixed(6)));
+    form.setFieldValue('longitude', Number(lng.toFixed(6)));
+  };
 
   const handleSubmit = form.onSubmit(async (values) => {
     setErrorMessage(null);
@@ -117,22 +134,11 @@ export function PropertyForm({
             </Text>
 
             <SimpleGrid cols={2} mb={14}>
-              <TextInput
-                label="Matrícula"
-                withAsterisk
-                placeholder="MAT-2026-00148"
-                {...form.getInputProps('registrationNumber')}
-              />
-              <TextInput
-                label="Cartório"
-                withAsterisk
-                placeholder="1º Ofício de Crateús"
-                {...form.getInputProps('notaryOffice')}
-              />
+              <TextInput label="Matrícula" placeholder="MAT-2026-00148" {...form.getInputProps('registrationNumber')} />
+              <TextInput label="Cartório" placeholder="1º Ofício de Crateús" {...form.getInputProps('notaryOffice')} />
             </SimpleGrid>
             <Textarea
               label="Descrição do Imóvel"
-              withAsterisk
               minRows={3}
               placeholder="Descreva o imóvel — tipo de edificação, finalidade, características construtivas..."
               {...form.getInputProps('notarialDescription')}
@@ -150,22 +156,15 @@ export function PropertyForm({
             <SimpleGrid cols={2} mb={14}>
               <Select
                 label="Tipo de Posse"
-                withAsterisk
                 data={possessionTypeOptions}
                 description="Define a natureza jurídica da posse municipal"
                 {...form.getInputProps('possessionType')}
               />
-              <Select
-                label="Categoria de Uso"
-                withAsterisk
-                data={usageCategoryOptions}
-                {...form.getInputProps('usageCategory')}
-              />
+              <Select label="Categoria de Uso" data={usageCategoryOptions} {...form.getInputProps('usageCategory')} />
             </SimpleGrid>
 
             <Textarea
               label="Destinação / Finalidade do Imóvel"
-              withAsterisk
               rows={3}
               description="Especifique o uso atual e finalidade pública atendida pelo imóvel"
               placeholder="Ex: Funcionamento da Escola Municipal de Ensino Fundamental..."
@@ -184,18 +183,17 @@ export function PropertyForm({
             </Text>
 
             <SimpleGrid cols={2} mb={14}>
-              <TextInput label="CEP" withAsterisk placeholder="63700-000" {...form.getInputProps('address.zipCode')} />
-              <TextInput label="Bairro" withAsterisk placeholder="Centro" {...form.getInputProps('address.neighborhood')} />
+              <TextInput label="CEP" placeholder="63700-000" {...form.getInputProps('address.zipCode')} />
+              <TextInput label="Bairro" placeholder="Centro" {...form.getInputProps('address.neighborhood')} />
             </SimpleGrid>
             <TextInput
               label="Logradouro"
-              withAsterisk
               mb={14}
               placeholder="Ex: Rua das Flores"
               {...form.getInputProps('address.street')}
             />
             <SimpleGrid cols={2}>
-              <TextInput label="Número" withAsterisk placeholder="124 ou s/n" {...form.getInputProps('address.number')} />
+              <TextInput label="Número" placeholder="124 ou s/n" {...form.getInputProps('address.number')} />
               <TextInput label="Complemento" placeholder="Bloco, andar, etc." {...form.getInputProps('address.reference')} />
             </SimpleGrid>
           </Box>
@@ -208,10 +206,9 @@ export function PropertyForm({
               Medidas físicas do bem
             </Text>
             <SimpleGrid cols={2}>
-              <NumberInput label="Área Total" withAsterisk suffix=" m²" decimalScale={2} {...form.getInputProps('totalArea')} />
+              <NumberInput label="Área Total" suffix=" m²" decimalScale={2} {...form.getInputProps('totalArea')} />
               <NumberInput
                 label="Área Construída"
-                withAsterisk
                 suffix=" m²"
                 decimalScale={2}
                 {...form.getInputProps('builtArea')}
@@ -224,20 +221,32 @@ export function PropertyForm({
         <Paper style={{ overflow: 'hidden' }}>
           <Box p="16px 20px 0">
             <Text fw={700} mb={4} style={{ fontSize: 15 }}>
-              Geolocalização (GPS)
+              Geolocalização (UTM)
             </Text>
             <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Coordenadas geográficas · clique no mapa para capturar
+              Fuso {formatUtmZone(utm)} · SIRGAS 2000 · clique no mapa para capturar
             </Text>
             <SimpleGrid cols={2} mb={14}>
-              <NumberInput label="Latitude" withAsterisk decimalScale={6} {...form.getInputProps('latitude')} />
-              <NumberInput label="Longitude" withAsterisk decimalScale={6} {...form.getInputProps('longitude')} />
+              <NumberInput
+                label="Coordenada E (Este)"
+                suffix=" m"
+                decimalScale={2}
+                value={utm.easting}
+                onChange={(value) => handleUtmChange('easting', Number(value) || 0)}
+              />
+              <NumberInput
+                label="Coordenada N (Norte)"
+                suffix=" m"
+                decimalScale={2}
+                value={utm.northing}
+                onChange={(value) => handleUtmChange('northing', Number(value) || 0)}
+              />
             </SimpleGrid>
           </Box>
 
           <PropertyMiniMap
-            latitude={form.values.latitude}
-            longitude={form.values.longitude}
+            latitude={latitude}
+            longitude={longitude}
             onChange={(lat, lng) => {
               form.setFieldValue('latitude', Number(lat.toFixed(6)));
               form.setFieldValue('longitude', Number(lng.toFixed(6)));
@@ -252,13 +261,7 @@ export function PropertyForm({
               Unidade responsável e dados orçamentários
             </Text>
             <SimpleGrid cols={2}>
-              <Select
-                label="Unidade Gestora"
-                withAsterisk
-                data={managingUnitOptions}
-                searchable
-                {...form.getInputProps('managingUnitId')}
-              />
+              <Select label="Unidade Gestora" data={managingUnitOptions} searchable {...form.getInputProps('managingUnitId')} />
               <TextInput label="Unidade Orçamentária" placeholder="02.04.001" {...form.getInputProps('budgetUnit')} />
             </SimpleGrid>
           </Box>
@@ -271,10 +274,9 @@ export function PropertyForm({
               Aquisição e valor patrimonial
             </Text>
             <SimpleGrid cols={2} mb={14}>
-              <NumberInput label="Ano Aquisição" withAsterisk {...form.getInputProps('acquisitionYear')} />
+              <NumberInput label="Ano Aquisição" {...form.getInputProps('acquisitionYear')} />
               <NumberInput
                 label="Valor Original"
-                withAsterisk
                 prefix="R$ "
                 thousandSeparator="."
                 decimalSeparator=","

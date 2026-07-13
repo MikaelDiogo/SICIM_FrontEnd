@@ -50,7 +50,6 @@ export function ReportsPage() {
             Relatórios <span style={{ color: "#1A5C2A", fontWeight: 600 }}>patrimoniais</span> e contábeis
           </>
         }
-        subtitle="Gere relatórios consolidados do patrimônio imobiliário municipal. Personalize filtros e exporte em PDF, Excel ou impressão."
       />
 
       <Box p={`20px ${PAGE_GUTTER_X}px 48px`}>

@@ -36,7 +36,6 @@ export function DashboardPage() {
             Patrimônio <span style={{ color: "#1A5C2A", fontWeight: 600 }}>imobiliário</span> da municipalidade
           </>
         }
-        subtitle="Cadastro centralizado dos bens patrimoniais imóveis sob gestão da Prefeitura Municipal de Crateús — consulta, geolocalização e controle contábil em ambiente único."
       />
 
       {isError && (

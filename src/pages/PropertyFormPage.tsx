@@ -84,12 +84,6 @@ export function PropertyFormPage() {
             </span>
           </>
         }
-        subtitle={
-          <>
-            Preencha as informações abaixo para {isEditing ? 'atualizar o registro' : 'inclusão de um novo imóvel'} no
-            patrimônio municipal. Campos marcados com * são obrigatórios.
-          </>
-        }
       />
       <div style={{ padding: `32px ${PAGE_GUTTER_X}px 60px` }}>
         <PropertyForm
