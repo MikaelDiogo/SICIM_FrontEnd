@@ -1,8 +1,9 @@
-import { ActionIcon, Avatar, Box, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Avatar, Box, CloseButton, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
 import { useWindowScroll } from '@mantine/hooks';
 import { IconLogout, IconSearch } from '@tabler/icons-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/entities/auth/auth-context';
+import { useSearch } from '@/shared/lib/search-context';
 import { roleLabels } from '@/shared/types/enums';
 import { HEADER_ACCENT_HEIGHT, PAGE_GUTTER_X, RADIUS_MD } from './layout-constants';
 import { navItems } from './nav-items';
@@ -115,7 +116,18 @@ function NavRow({ compact }: { compact: boolean }) {
 export function AppHeader() {
   const [{ y }] = useWindowScroll();
   const { user, signOut } = useAuth();
+  const { query, setQuery } = useSearch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const compact = y > SCROLL_COLLAPSE_THRESHOLD;
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value);
+    const searchablePages = ['/', '/relatorios'];
+    if (value.trim() && !searchablePages.includes(location.pathname)) {
+      navigate('/');
+    }
+  };
   const initials = user?.name
     ?.split(' ')
     .map((part) => part[0])
@@ -155,14 +167,16 @@ export function AppHeader() {
           <Text size="18px" fw={700} c="#1A5C2A" style={{ lineHeight: 1 }}>
             SICIM
           </Text>
-          <Text size="10px" tt="uppercase" c="dimmed" style={{ letterSpacing: 1.5 }}>
-            Crateús · Ceará
-          </Text>
         </Box>
 
         <TextInput
           placeholder="Buscar por matrícula, endereço, cartório..."
           leftSection={<IconSearch size={14} />}
+          rightSection={
+            query ? <CloseButton size="sm" onClick={() => setQuery('')} aria-label="Limpar busca" /> : null
+          }
+          value={query}
+          onChange={(event) => handleSearchChange(event.currentTarget.value)}
           radius="md"
           style={{ flex: 1, maxWidth: 420 }}
         />

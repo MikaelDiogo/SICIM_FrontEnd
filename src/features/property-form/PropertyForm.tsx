@@ -20,7 +20,7 @@ import { extractErrorMessage } from '@/shared/lib/api-client';
 import { estimateNetBookValue } from '@/shared/lib/depreciation-estimate';
 import { formatCurrency } from '@/shared/lib/format';
 import { CRATEUS_CENTER } from '@/shared/lib/map-config';
-import { formatUtmZone, latLngToUtm, utmToLatLng } from '@/shared/lib/utm';
+import { latLngToUtm, utmToLatLng } from '@/shared/lib/utm';
 import { usageCategoryLabels, possessionTypeLabels, PossessionType, UsageCategory } from '@/shared/types/enums';
 import { RADIUS_MD } from '@/shared/ui/layout-constants';
 import { emptyPropertyFormValues, propertyFormSchema, type PropertyFormValues } from './property-form-schema';
@@ -126,11 +126,8 @@ export function PropertyForm({
         {/* COLUNA ESQUERDA */}
         <Paper style={{ overflow: 'hidden' }}>
           <Box p="16px 20px" style={{ borderBottom: '1px solid #ededed' }}>
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Identificação do Imóvel
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Dados de registro cartorial
             </Text>
 
             <SimpleGrid cols={2} mb={14}>
@@ -146,18 +143,14 @@ export function PropertyForm({
           </Box>
 
           <Box p="16px 20px" style={{ borderBottom: '1px solid #ededed' }}>
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Situação Jurídica e Destinação
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Tipo de posse e finalidade de uso
             </Text>
 
             <SimpleGrid cols={2} mb={14}>
               <Select
                 label="Tipo de Posse"
                 data={possessionTypeOptions}
-                description="Define a natureza jurídica da posse municipal"
                 {...form.getInputProps('possessionType')}
               />
               <Select label="Categoria de Uso" data={usageCategoryOptions} {...form.getInputProps('usageCategory')} />
@@ -166,7 +159,6 @@ export function PropertyForm({
             <Textarea
               label="Destinação / Finalidade do Imóvel"
               rows={3}
-              description="Especifique o uso atual e finalidade pública atendida pelo imóvel"
               placeholder="Ex: Funcionamento da Escola Municipal de Ensino Fundamental..."
               {...form.getInputProps('publicPurpose')}
             />
@@ -175,11 +167,8 @@ export function PropertyForm({
           </Box>
 
           <Box p="16px 20px" style={{ borderBottom: '1px solid #ededed' }}>
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Endereço
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Localização física do imóvel
             </Text>
 
             <SimpleGrid cols={2} mb={14}>
@@ -199,11 +188,8 @@ export function PropertyForm({
           </Box>
 
           <Box p="16px 20px">
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Dimensões
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Medidas físicas do bem
             </Text>
             <SimpleGrid cols={2}>
               <NumberInput label="Área Total" suffix=" m²" decimalScale={2} {...form.getInputProps('totalArea')} />
@@ -220,11 +206,8 @@ export function PropertyForm({
         {/* COLUNA DIREITA */}
         <Paper style={{ overflow: 'hidden' }}>
           <Box p="16px 20px 0">
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Geolocalização (UTM)
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Fuso {formatUtmZone(utm)} · SIRGAS 2000 · clique no mapa para capturar
             </Text>
             <SimpleGrid cols={2} mb={14}>
               <NumberInput
@@ -254,11 +237,8 @@ export function PropertyForm({
           />
 
           <Box p="16px 20px" style={{ borderTop: '1px solid #ededed', borderBottom: '1px solid #ededed' }}>
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Vinculação Administrativa
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Unidade responsável e dados orçamentários
             </Text>
             <SimpleGrid cols={2}>
               <Select label="Unidade Gestora" data={managingUnitOptions} searchable {...form.getInputProps('managingUnitId')} />
@@ -267,11 +247,8 @@ export function PropertyForm({
           </Box>
 
           <Box p="16px 20px">
-            <Text fw={700} mb={4} style={{ fontSize: 15 }}>
+            <Text fw={700} mb={14} style={{ fontSize: 15 }}>
               Informações Contábeis
-            </Text>
-            <Text size="11.5px" c="dimmed" tt="uppercase" mb={14} style={{ letterSpacing: 1.2 }}>
-              Aquisição e valor patrimonial
             </Text>
             <SimpleGrid cols={2} mb={14}>
               <NumberInput label="Ano Aquisição" {...form.getInputProps('acquisitionYear')} />

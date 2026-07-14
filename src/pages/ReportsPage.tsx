@@ -1,11 +1,15 @@
 import { Alert, Box, Button, Group, Loader, Paper, SimpleGrid, Text } from '@mantine/core';
-import { IconAlertCircle, IconFileTypePdf, IconFileSpreadsheet, IconPrinter } from '@tabler/icons-react';
+import { IconAlertCircle, IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useAllProperties } from '@/entities/property/property.hooks';
+import { useManagingUnits } from '@/entities/managing-unit/managing-unit.hooks';
+import { useAuth } from '@/entities/auth/auth-context';
 import { extractErrorMessage } from '@/shared/lib/api-client';
 import { downloadCsv } from '@/shared/lib/export-csv';
-import { formatCurrency, formatDate, formatNumber } from '@/shared/lib/format';
+import { generatePropertyReportPdf } from '@/shared/lib/export-pdf';
+import { formatCurrency, formatNumber } from '@/shared/lib/format';
 import { aggregateProperties, distributionByCategory, distributionByPossession } from '@/shared/lib/property-stats';
+import { useSearch } from '@/shared/lib/search-context';
 import { PAGE_GUTTER_X } from '@/shared/ui/layout-constants';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { PropertyTable } from '@/features/property-list/PropertyTable';
@@ -15,9 +19,15 @@ import { HorizontalDistributionChart } from '@/features/reports/HorizontalDistri
 
 export function ReportsPage() {
   const { data: properties, isLoading, isError, error } = useAllProperties();
+  const { data: managingUnits } = useManagingUnits();
+  const { user } = useAuth();
   const [filters, setFilters] = useState(initialReportFilterState);
+  const { query } = useSearch();
 
-  const filtered = useMemo(() => applyReportFilters(properties ?? [], filters), [properties, filters]);
+  const filtered = useMemo(
+    () => applyReportFilters(properties ?? [], filters, query),
+    [properties, filters, query],
+  );
   const aggregates = useMemo(() => aggregateProperties(filtered), [filtered]);
   const categoryDistribution = useMemo(() => distributionByCategory(filtered), [filtered]);
   const possessionDistribution = useMemo(() => distributionByPossession(filtered), [filtered]);
@@ -39,6 +49,18 @@ export function ReportsPage() {
         status: property.status,
       })),
     );
+  };
+
+  const handleExportPdf = () => {
+    const managingUnitNameById = new Map((managingUnits ?? []).map((unit) => [unit.id, unit.acronym]));
+    generatePropertyReportPdf({
+      properties: filtered,
+      aggregates,
+      categoryDistribution,
+      possessionDistribution,
+      generatedBy: user?.name,
+      managingUnitNameById,
+    });
   };
 
   return (
@@ -67,11 +89,8 @@ export function ReportsPage() {
               <Text size="10px" tt="uppercase" c="rgba(255,255,255,0.5)" mb={6} style={{ letterSpacing: 2 }}>
                 Relatório Patrimonial Consolidado
               </Text>
-              <Text fw={700} mb={4} style={{ fontSize: 18 }}>
+              <Text fw={700} style={{ fontSize: 18 }}>
                 Patrimônio Imobiliário — Crateús/CE
-              </Text>
-              <Text size="12px" c="rgba(255,255,255,0.7)" ff="monospace">
-                Gerado em {formatDate(new Date())} · {filtered.length} imóveis
               </Text>
             </Box>
 
@@ -102,19 +121,16 @@ export function ReportsPage() {
                 <HorizontalDistributionChart title="Distribuição por Categoria de Uso" rows={categoryDistribution} />
                 <HorizontalDistributionChart title="Distribuição por Tipo de Posse" rows={possessionDistribution} />
 
-                <Group justify="space-between" p="18px 28px" style={{ background: '#E8F3EB', borderTop: '1px solid #cfdcd5' }} className="no-print">
+                <Group justify="space-between" p="18px 28px" style={{ background: '#E8F3EB', borderTop: '1px solid #cfdcd5' }}>
                   <Text size="12.5px" c="#1A5C2A">
                     Exportar <Text component="strong" fw={600} span>{filtered.length} registros</Text> nos formatos abaixo
                   </Text>
                   <Group gap={8}>
-                    <Button variant="default" size="xs" leftSection={<IconFileTypePdf size={14} />} onClick={() => window.print()}>
-                      PDF
-                    </Button>
                     <Button variant="default" size="xs" leftSection={<IconFileSpreadsheet size={14} />} onClick={handleExportCsv}>
                       Excel (CSV)
                     </Button>
-                    <Button color="brandGreen" size="xs" leftSection={<IconPrinter size={14} />} onClick={() => window.print()}>
-                      Imprimir
+                    <Button color="brandGreen" size="xs" leftSection={<IconFileTypePdf size={14} />} onClick={handleExportPdf}>
+                      Gerar PDF
                     </Button>
                   </Group>
                 </Group>

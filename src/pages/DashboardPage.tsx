@@ -15,14 +15,19 @@ import { applyTableFilters, initialTableFilterState } from '@/features/property-
 import { PropertyDetailAside } from '@/features/property-list/PropertyDetailAside';
 import { PropertyFilterChips } from '@/features/property-list/PropertyFilterChips';
 import { PropertyTable } from '@/features/property-list/PropertyTable';
+import { useSearch } from '@/shared/lib/search-context';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: properties, isLoading, isError, error } = useAllProperties();
   const [filters, setFilters] = useState(initialTableFilterState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { query } = useSearch();
 
-  const filtered = useMemo(() => applyTableFilters(properties ?? [], filters), [properties, filters]);
+  const filtered = useMemo(
+    () => applyTableFilters(properties ?? [], filters, query),
+    [properties, filters, query],
+  );
   const aggregates = useMemo(() => aggregateProperties(properties ?? []), [properties]);
   const selected: Property | null =
     filtered.find((p) => p.id === selectedId) ?? filtered[0] ?? null;
@@ -93,10 +98,7 @@ export function DashboardPage() {
             <Group justify="space-between" p="14px 20px" style={{ borderBottom: '1px solid #e0e0e0' }}>
               <Box>
                 <Text fw={700} style={{ fontSize: 15 }}>
-                  Imóveis Recentes
-                </Text>
-                <Text size="11px" c="dimmed" tt="uppercase" style={{ letterSpacing: 1.2 }}>
-                  Últimos cadastros e atualizações
+                  {query.trim() ? `Resultados da busca (${filtered.length})` : 'Imóveis Recentes'}
                 </Text>
               </Box>
               <Button color="brandGreen" size="xs" leftSection={<IconPlus size={13} />} onClick={() => navigate('/imoveis/novo')}>
@@ -111,7 +113,11 @@ export function DashboardPage() {
                 <Loader size="sm" />
               </Group>
             ) : (
-              <PropertyTable properties={filtered.slice(0, 20)} selectedId={selected?.id} onSelect={(p) => setSelectedId(p.id)} />
+              <PropertyTable
+                properties={query.trim() ? filtered : filtered.slice(0, 20)}
+                selectedId={selected?.id}
+                onSelect={(p) => setSelectedId(p.id)}
+              />
             )}
           </Paper>
         </Stack>

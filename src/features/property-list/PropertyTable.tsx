@@ -28,7 +28,7 @@ export function PropertyTable({
             <Table.Th>Matrícula</Table.Th>
             <Table.Th>Unidade Gestora</Table.Th>
             <Table.Th>Posse</Table.Th>
-            <Table.Th>Área (m²)</Table.Th>
+            <Table.Th style={{ whiteSpace: 'nowrap' }}>Área</Table.Th>
             <Table.Th style={{ textAlign: 'right' }}>Valor Patrimonial</Table.Th>
             <Table.Th>Status</Table.Th>
           </Table.Tr>
@@ -74,11 +74,11 @@ export function PropertyTable({
               <Table.Td>
                 <PossessionBadge type={property.possessionType} />
               </Table.Td>
-              <Table.Td>
-                <Text size="sm" fw={500}>
+              <Table.Td style={{ whiteSpace: 'nowrap' }}>
+                <Text size="sm" fw={500} style={{ whiteSpace: 'nowrap' }}>
                   {formatArea(property.totalArea)}
                 </Text>
-                <Text size="11.5px" c="dimmed">
+                <Text size="11.5px" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                   {property.builtArea ? `${formatArea(property.builtArea)} constr.` : '— constr.'}
                 </Text>
               </Table.Td>
