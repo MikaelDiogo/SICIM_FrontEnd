@@ -30,3 +30,7 @@ body {
 .maplibregl-popup-close-button {
   z-index: 1;
 }
+
+.suggestion-item:hover {
+  background: #F2F2F2;
+}

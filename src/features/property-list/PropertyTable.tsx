@@ -20,17 +20,17 @@ export function PropertyTable({
 
   return (
     <Box style={{ overflowX: 'auto' }}>
-      <Table verticalSpacing="md" highlightOnHover>
+      <Table verticalSpacing="md" highlightOnHover style={{ tableLayout: 'fixed', width: '100%', minWidth: 860 }}>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th w={30} />
-            <Table.Th>Imóvel / Endereço</Table.Th>
-            <Table.Th>Matrícula</Table.Th>
-            <Table.Th>Unidade Gestora</Table.Th>
-            <Table.Th>Posse</Table.Th>
-            <Table.Th style={{ whiteSpace: 'nowrap' }}>Área</Table.Th>
-            <Table.Th style={{ textAlign: 'right' }}>Valor Patrimonial</Table.Th>
-            <Table.Th>Status</Table.Th>
+            <Table.Th style={{ width: 26 }} />
+            <Table.Th style={{ width: '24%' }}>Imóvel / Endereço</Table.Th>
+            <Table.Th style={{ width: '12%' }}>Matrícula</Table.Th>
+            <Table.Th style={{ width: '13%' }}>Unidade Gestora</Table.Th>
+            <Table.Th style={{ width: '11%' }}>Posse</Table.Th>
+            <Table.Th style={{ width: '12%', whiteSpace: 'nowrap' }}>Área</Table.Th>
+            <Table.Th style={{ width: '14%', textAlign: 'right' }}>Valor Patrimonial</Table.Th>
+            <Table.Th style={{ width: '11%' }}>Status</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -54,24 +54,24 @@ export function PropertyTable({
                 />
               </Table.Td>
               <Table.Td>
-                <Text size="sm" fw={500} c="dark" lineClamp={1}>
+                <Text size="xs" fw={500} c="dark" lineClamp={1} title={property.notarialDescription}>
                   {property.notarialDescription}
                 </Text>
-                <Text size="11.5px" c="dimmed" ff="monospace">
+                <Text size="11px" c="dimmed" ff="monospace" lineClamp={1}>
                   {property.address.street}, {property.address.number} · {property.address.neighborhood}
                 </Text>
               </Table.Td>
-              <Table.Td>
+              <Table.Td style={{ whiteSpace: 'nowrap' }}>
                 <Text size="11.5px" c="dimmed" ff="monospace">
                   {property.registrationNumber}
                 </Text>
               </Table.Td>
-              <Table.Td>
-                <Badge variant="light" color="brandGreen" radius="xl">
+              <Table.Td style={{ whiteSpace: 'nowrap' }}>
+                <Badge variant="light" color="brandGreen" radius="xl" style={{ maxWidth: '100%' }}>
                   {unitNameById.get(property.managingUnitId) ?? '—'}
                 </Badge>
               </Table.Td>
-              <Table.Td>
+              <Table.Td style={{ whiteSpace: 'nowrap' }}>
                 <PossessionBadge type={property.possessionType} />
               </Table.Td>
               <Table.Td style={{ whiteSpace: 'nowrap' }}>
@@ -82,12 +82,12 @@ export function PropertyTable({
                   {property.builtArea ? `${formatArea(property.builtArea)} constr.` : '— constr.'}
                 </Text>
               </Table.Td>
-              <Table.Td style={{ textAlign: 'right' }}>
+              <Table.Td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <Text size="12.5px" ff="monospace">
                   {formatCurrency(property.netBookValue)}
                 </Text>
               </Table.Td>
-              <Table.Td>
+              <Table.Td style={{ whiteSpace: 'nowrap' }}>
                 <StatusBadge status={property.status} />
               </Table.Td>
             </Table.Tr>

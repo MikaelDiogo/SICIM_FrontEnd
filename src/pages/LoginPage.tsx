@@ -1,4 +1,4 @@
-import { Box, Paper, Stack, Title } from '@mantine/core';
+import { Box, Paper, Stack, Text, Title } from '@mantine/core';
 import { LoginForm } from '@/features/auth/LoginForm';
 
 export function LoginPage() {
@@ -17,6 +17,9 @@ export function LoginPage() {
           <Title order={1} style={{ fontSize: 24 }}>
             SICIM
           </Title>
+          <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: 1.5 }}>
+            Crateús · Ceará
+          </Text>
         </Stack>
         <LoginForm />
       </Paper>
