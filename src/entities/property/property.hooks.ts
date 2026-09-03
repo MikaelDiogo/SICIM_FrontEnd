@@ -3,6 +3,7 @@ import {
   approveProperty,
   deactivateProperty,
   getProperty,
+  listCustomCategories,
   listProperties,
   recalculateDepreciation,
   registerProperty,
@@ -16,6 +17,7 @@ export const propertyKeys = {
   allUnpaged: (filters: Omit<ListPropertiesFilters, 'page' | 'pageSize'>) =>
     ['properties', 'all', filters] as const,
   detail: (id: string) => ['properties', 'detail', id] as const,
+  customCategories: ['properties', 'custom-categories'] as const,
 };
 
 const MAX_PAGE_SIZE = 100;
@@ -99,6 +101,14 @@ export function useDeactivateProperty() {
   return useMutation({
     mutationFn: (id: string) => deactivateProperty(id),
     onSuccess: (property) => invalidate(property.id),
+  });
+}
+
+export function useCustomCategories() {
+  return useQuery({
+    queryKey: propertyKeys.customCategories,
+    queryFn: listCustomCategories,
+    staleTime: 60 * 1000,
   });
 }
 

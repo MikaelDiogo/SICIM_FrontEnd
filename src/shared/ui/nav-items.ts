@@ -1,5 +1,4 @@
 import {
-  IconChartBar,
   IconFileText,
   IconLayoutDashboard,
   IconMap2,
@@ -7,12 +6,14 @@ import {
   IconSettings,
   IconUsers,
 } from '@tabler/icons-react';
+import type { Role } from '@/shared/types/enums';
 
 export interface NavItem {
   label: string;
   to: string;
   icon: typeof IconLayoutDashboard;
   disabled?: boolean;
+  roles?: Role[];
 }
 
 export const navItems: NavItem[] = [
@@ -20,7 +21,6 @@ export const navItems: NavItem[] = [
   { label: 'Mapa Territorial', to: '/mapa', icon: IconMap2 },
   { label: 'Novo Cadastro', to: '/imoveis/novo', icon: IconPlus },
   { label: 'Relatórios', to: '/relatorios', icon: IconFileText },
-  { label: 'Indicadores', to: '#', icon: IconChartBar, disabled: true },
-  { label: 'Usuários', to: '#', icon: IconUsers, disabled: true },
+  { label: 'Usuários', to: '/usuarios', icon: IconUsers, roles: ['ADMINISTRATION'] },
   { label: 'Configurações', to: '#', icon: IconSettings, disabled: true },
 ];

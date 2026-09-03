@@ -58,7 +58,7 @@ function NavRow({ compact }: { compact: boolean }) {
       </Box>
 
       <Group justify="center" gap={4} wrap="wrap" style={{ flex: 1 }}>
-        {navItems.map((item) => {
+        {navItems.filter((item) => !item.roles || (user?.role && item.roles.includes(user.role))).map((item) => {
           const active = location.pathname === item.to;
           const itemStyle = {
             display: 'flex',

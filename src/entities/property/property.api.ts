@@ -41,3 +41,8 @@ export async function recalculateDepreciation(id: string): Promise<Property> {
   const { data } = await apiClient.patch<Property>(`/properties/${id}/recalculate-depreciation`);
   return data;
 }
+
+export async function listCustomCategories(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>('/properties/custom-categories');
+  return data;
+}

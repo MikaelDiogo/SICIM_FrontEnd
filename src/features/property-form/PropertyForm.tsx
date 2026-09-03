@@ -2,7 +2,9 @@ import {
   Alert,
   Box,
   Button,
+  Combobox,
   Group,
+  InputBase,
   NumberInput,
   Paper,
   Select,
@@ -10,11 +12,13 @@ import {
   Text,
   Textarea,
   TextInput,
+  useCombobox,
 } from '@mantine/core';
 import { schemaResolver, useForm } from '@mantine/form';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useManagingUnits } from '@/entities/managing-unit/managing-unit.hooks';
+import { useCustomCategories } from '@/entities/property/property.hooks';
 import type { RegisterPropertyInput } from '@/entities/property/property.types';
 import { extractErrorMessage } from '@/shared/lib/api-client';
 import { estimateNetBookValue } from '@/shared/lib/depreciation-estimate';
@@ -40,6 +44,9 @@ const possessionTypeOptions = (Object.keys(possessionTypeLabels) as PossessionTy
 function toRegisterInput(values: PropertyFormValues): RegisterPropertyInput {
   return {
     ...values,
+    customCategoryName: values.usageCategory === UsageCategory.OTHER && values.customCategoryName
+      ? values.customCategoryName
+      : undefined,
     possessionContract:
       values.possessionType === PossessionType.OWNED || !values.possessionContract
         ? undefined
@@ -65,8 +72,11 @@ export function PropertyForm({
   isSubmitting: boolean;
 }) {
   const { data: managingUnits } = useManagingUnits();
+  const { data: existingCustomCategories = [] } = useCustomCategories();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [customCategorySearch, setCustomCategorySearch] = useState('');
+  const customCategoryCombobox = useCombobox({ onDropdownClose: () => customCategoryCombobox.resetSelectedOption() });
 
   const form = useForm<PropertyFormValues>({
     initialValues,
@@ -90,10 +100,51 @@ export function PropertyForm({
 
   const latitude = form.values.latitude ?? CRATEUS_CENTER[1];
   const longitude = form.values.longitude ?? CRATEUS_CENTER[0];
-  const utm = useMemo(() => latLngToUtm(latitude, longitude), [latitude, longitude]);
 
-  const handleUtmChange = (field: 'easting' | 'northing', value: number) => {
-    const { lat, lng } = utmToLatLng({ ...utm, [field]: value });
+  const derivedUtm = useMemo(() => latLngToUtm(latitude, longitude), [latitude, longitude]);
+
+  const formatUtm = (v: number) => Math.round(v).toLocaleString('pt-BR');
+
+  const [utmEastingText, setUtmEastingText] = useState(() => formatUtm(derivedUtm.easting));
+  const [utmNorthingText, setUtmNorthingText] = useState(() => formatUtm(derivedUtm.northing));
+
+  // Ref que indica se a última mudança de lat/lng veio dos próprios campos UTM.
+  // Se veio daqui, o useEffect não sobrescreve o texto que o usuário está digitando.
+  const utmOrigin = useRef(false);
+
+  useEffect(() => {
+    if (utmOrigin.current) {
+      utmOrigin.current = false;
+      return;
+    }
+    // Mudança veio do mapa → atualiza os campos de texto UTM
+    setUtmEastingText(formatUtm(derivedUtm.easting));
+    setUtmNorthingText(formatUtm(derivedUtm.northing));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latitude, longitude]);
+
+  // Remove prefixos "E:", "N:", espaços, sufixos, e interpreta separadores pt-BR
+  const parseUtmText = (text: string): number | null => {
+    const cleaned = text.replace(/[ENen:\s°mM]/g, '');
+    let normalized = cleaned;
+    const lastDot = cleaned.lastIndexOf('.');
+    const lastComma = cleaned.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      normalized = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot !== -1 && cleaned.slice(lastDot + 1).length === 3 && !cleaned.includes(',')) {
+      normalized = cleaned.replace(/\./g, '');
+    }
+    const n = parseFloat(normalized);
+    return isFinite(n) && n > 0 ? n : null;
+  };
+
+  const applyUtmTexts = (eastingText: string, northingText: string) => {
+    const e = parseUtmText(eastingText);
+    const n = parseUtmText(northingText);
+    // Só converte quando ambos têm magnitude razoável para UTM 24S
+    if (e === null || n === null || e < 100_000 || n < 1_000_000) return;
+    utmOrigin.current = true;
+    const { lat, lng } = utmToLatLng({ easting: e, northing: n, zone: 24, hemisphere: 'S' });
     form.setFieldValue('latitude', Number(lat.toFixed(6)));
     form.setFieldValue('longitude', Number(lng.toFixed(6)));
   };
@@ -147,14 +198,70 @@ export function PropertyForm({
               Situação Jurídica e Destinação
             </Text>
 
-            <SimpleGrid cols={2} mb={14}>
+            <SimpleGrid cols={2} mb={form.values.usageCategory === UsageCategory.OTHER ? 10 : 14}>
               <Select
                 label="Tipo de Posse"
                 data={possessionTypeOptions}
                 {...form.getInputProps('possessionType')}
               />
-              <Select label="Categoria de Uso" data={usageCategoryOptions} {...form.getInputProps('usageCategory')} />
+              <Select
+                label="Categoria de Uso"
+                data={usageCategoryOptions}
+                {...form.getInputProps('usageCategory')}
+                onChange={(value) => {
+                  form.setFieldValue('usageCategory', value as UsageCategory);
+                  if (value !== UsageCategory.OTHER) form.setFieldValue('customCategoryName', '');
+                }}
+              />
             </SimpleGrid>
+
+            {form.values.usageCategory === UsageCategory.OTHER && (
+              <Combobox
+                store={customCategoryCombobox}
+                onOptionSubmit={(val) => {
+                  form.setFieldValue('customCategoryName', val);
+                  setCustomCategorySearch(val);
+                  customCategoryCombobox.closeDropdown();
+                }}
+              >
+                <Combobox.Target>
+                  <InputBase
+                    label="Nome da categoria personalizada"
+                    placeholder="Ex: Obras, Esporte, Infraestrutura..."
+                    mb={14}
+                    value={customCategorySearch || form.values.customCategoryName || ''}
+                    onChange={(e) => {
+                      const v = e.currentTarget.value;
+                      setCustomCategorySearch(v);
+                      form.setFieldValue('customCategoryName', v);
+                      customCategoryCombobox.openDropdown();
+                    }}
+                    onClick={() => customCategoryCombobox.openDropdown()}
+                    onFocus={() => customCategoryCombobox.openDropdown()}
+                    onBlur={() => customCategoryCombobox.closeDropdown()}
+                    rightSection={<Combobox.Chevron />}
+                    rightSectionPointerEvents="none"
+                  />
+                </Combobox.Target>
+                <Combobox.Dropdown>
+                  <Combobox.Options>
+                    {existingCustomCategories
+                      .filter((c) => c.toLowerCase().includes((customCategorySearch || '').toLowerCase()))
+                      .map((c) => (
+                        <Combobox.Option key={c} value={c}>{c}</Combobox.Option>
+                      ))}
+                    {customCategorySearch && !existingCustomCategories.includes(customCategorySearch) && (
+                      <Combobox.Option value={customCategorySearch}>
+                        + Criar &quot;{customCategorySearch}&quot;
+                      </Combobox.Option>
+                    )}
+                    {existingCustomCategories.length === 0 && !customCategorySearch && (
+                      <Combobox.Empty>Nenhuma categoria anterior</Combobox.Empty>
+                    )}
+                  </Combobox.Options>
+                </Combobox.Dropdown>
+              </Combobox>
+            )}
 
             <Textarea
               label="Destinação / Finalidade do Imóvel"
@@ -210,19 +317,37 @@ export function PropertyForm({
               Geolocalização (UTM)
             </Text>
             <SimpleGrid cols={2} mb={14}>
-              <NumberInput
+              <TextInput
                 label="Coordenada E (Este)"
-                suffix=" m"
-                decimalScale={2}
-                value={utm.easting}
-                onChange={(value) => handleUtmChange('easting', Number(value) || 0)}
+                placeholder="Ex: 427.600"
+                rightSection={<Text size="xs" c="dimmed">m</Text>}
+                value={utmEastingText}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  setUtmEastingText(v);
+                  applyUtmTexts(v, utmNorthingText);
+                }}
+                onBlur={() => {
+                  applyUtmTexts(utmEastingText, utmNorthingText);
+                  const parsed = parseUtmText(utmEastingText);
+                  if (parsed) setUtmEastingText(formatUtm(parsed));
+                }}
               />
-              <NumberInput
+              <TextInput
                 label="Coordenada N (Norte)"
-                suffix=" m"
-                decimalScale={2}
-                value={utm.northing}
-                onChange={(value) => handleUtmChange('northing', Number(value) || 0)}
+                placeholder="Ex: 9.427.700"
+                rightSection={<Text size="xs" c="dimmed">m</Text>}
+                value={utmNorthingText}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  setUtmNorthingText(v);
+                  applyUtmTexts(utmEastingText, v);
+                }}
+                onBlur={() => {
+                  applyUtmTexts(utmEastingText, utmNorthingText);
+                  const parsed = parseUtmText(utmNorthingText);
+                  if (parsed) setUtmNorthingText(formatUtm(parsed));
+                }}
               />
             </SimpleGrid>
           </Box>

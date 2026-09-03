@@ -2,13 +2,13 @@ import { z } from 'zod';
 import { MAX_LATITUDE, MAX_LONGITUDE, MIN_LATITUDE, MIN_LONGITUDE } from '@/shared/lib/map-config';
 import { PossessionType, UsageCategory } from '@/shared/types/enums';
 
-// Espelha RegisterPropertyDto (backend) campo a campo — qualquer mudança no DTO precisa
-// ser refletida aqui para manter os dois lados sincronizados.
+const req = (label: string) => z.string().min(1, `${label} é obrigatório`);
+
 const addressSchema = z.object({
-  street: z.string().optional(),
-  number: z.string().optional(),
-  neighborhood: z.string().optional(),
-  zipCode: z.string().optional(),
+  street: req('Logradouro'),
+  number: req('Número'),
+  neighborhood: req('Bairro'),
+  zipCode: req('CEP'),
   reference: z.string().optional(),
 });
 
@@ -19,40 +19,39 @@ const possessionContractSchema = z.object({
   referenceValue: z.number().positive().optional(),
   grantor: z.string().optional(),
   lessor: z.string().optional(),
-  administrativeProcessNumber: z.string().optional(),
+  administrativeProcessNumber: req('Número do processo administrativo'),
 });
 
 const currentYear = new Date().getFullYear();
 
 export const propertyFormSchema = z.object({
-  registrationNumber: z.string().optional(),
-  notaryOffice: z.string().optional(),
-  notarialDescription: z.string().optional(),
+  registrationNumber: req('Matrícula'),
+  notaryOffice: req('Cartório'),
+  notarialDescription: req('Descrição do imóvel'),
   address: addressSchema,
-  totalArea: z.number().positive('Área total deve ser maior que zero').optional(),
-  builtArea: z.number().positive('Área construída deve ser maior que zero').optional(),
+  totalArea: z.number({ required_error: 'Área total é obrigatória' }).positive('Área total deve ser maior que zero'),
+  builtArea: z.number({ required_error: 'Área construída é obrigatória' }).positive('Área construída deve ser maior que zero'),
   latitude: z
-    .number()
+    .number({ required_error: 'Latitude é obrigatória' })
     .min(MIN_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`)
-    .max(MAX_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`)
-    .optional(),
+    .max(MAX_LATITUDE, `Latitude deve estar entre ${MIN_LATITUDE} e ${MAX_LATITUDE} (Crateús/CE)`),
   longitude: z
-    .number()
+    .number({ required_error: 'Longitude é obrigatória' })
     .min(MIN_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`)
-    .max(MAX_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`)
-    .optional(),
-  managingUnitId: z.string().optional(),
+    .max(MAX_LONGITUDE, `Longitude deve estar entre ${MIN_LONGITUDE} e ${MAX_LONGITUDE} (Crateús/CE)`),
+  managingUnitId: z.string().uuid('Selecione uma unidade gestora'),
   budgetUnit: z.string().optional(),
-  usageCategory: z.enum(UsageCategory).optional(),
-  possessionType: z.enum(PossessionType).optional(),
+  usageCategory: z.enum(UsageCategory),
+  customCategoryName: z.string().optional(),
+  possessionType: z.enum(PossessionType),
   possessionContract: possessionContractSchema.optional(),
   acquisitionYear: z
-    .number()
+    .number({ required_error: 'Ano de aquisição é obrigatório' })
     .int()
-    .max(currentYear, `Ano de aquisição não pode ser posterior a ${currentYear}`)
-    .optional(),
-  originalValue: z.number().positive('Valor original deve ser maior que zero').optional(),
-  publicPurpose: z.string().optional(),
+    .min(1800, 'Ano inválido')
+    .max(currentYear, `Ano de aquisição não pode ser posterior a ${currentYear}`),
+  originalValue: z.number({ required_error: 'Valor original é obrigatório' }).positive('Valor original deve ser maior que zero'),
+  publicPurpose: req('Destinação / Finalidade'),
 });
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
@@ -69,6 +68,7 @@ export const emptyPropertyFormValues: PropertyFormValues = {
   managingUnitId: '',
   budgetUnit: '',
   usageCategory: UsageCategory.EDUCATIONAL,
+  customCategoryName: '',
   possessionType: PossessionType.OWNED,
   possessionContract: undefined,
   acquisitionYear: currentYear,

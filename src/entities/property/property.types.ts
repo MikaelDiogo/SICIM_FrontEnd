@@ -32,6 +32,7 @@ export interface Property {
   managingUnitId: string;
   budgetUnit?: string;
   usageCategory: UsageCategory;
+  customCategoryName: string | null;
   possessionType: PossessionType;
   possessionContract: PossessionContract | null;
   acquisitionYear: number;
@@ -65,6 +66,7 @@ export interface RegisterPropertyInput {
   managingUnitId: string;
   budgetUnit?: string;
   usageCategory: UsageCategory;
+  customCategoryName?: string;
   possessionType: PossessionType;
   possessionContract?: {
     startDate: string;
