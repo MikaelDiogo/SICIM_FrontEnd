@@ -1,5 +1,6 @@
 import {
   IconFileText,
+  IconHistory,
   IconLayoutDashboard,
   IconMap2,
   IconPlus,
@@ -21,4 +22,5 @@ export const navItems: NavItem[] = [
   { label: 'Novo Cadastro', to: '/imoveis/novo', icon: IconPlus },
   { label: 'Relatórios', to: '/relatorios', icon: IconFileText },
   { label: 'Unidades', to: '/configuracoes/unidades-gestoras', icon: IconSettings, roles: ['SICIM_ADMIN'] },
+  { label: 'Histórico', to: '/historico', icon: IconHistory, roles: ['SICIM_ADMIN'] },
 ];

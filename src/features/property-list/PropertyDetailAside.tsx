@@ -1,6 +1,6 @@
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCheck, IconEdit, IconMapPin, IconRefresh, IconX } from '@tabler/icons-react';
+import { IconCheck, IconEdit, IconHistory, IconMapPin, IconRefresh, IconX } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/entities/auth/auth-context';
 import { useManagingUnit } from '@/entities/managing-unit/managing-unit.hooks';
@@ -229,6 +229,19 @@ export function PropertyDetailAside({ property }: { property: Property | null })
           Abrir no Mapa
         </Button>
       </Group>
+      {canRecalculate && (
+        <Group p="0 18px 14px">
+          <Button
+            flex={1}
+            variant="subtle"
+            size="xs"
+            leftSection={<IconHistory size={13} />}
+            onClick={() => navigate(`/historico?propertyId=${property.id}`)}
+          >
+            Ver Histórico
+          </Button>
+        </Group>
+      )}
     </Paper>
   );
 }
