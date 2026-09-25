@@ -1,6 +1,6 @@
-import { Alert, Box, Button, Group, Loader, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Alert, Box, Button, Group, Loader, Pagination, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconAlertCircle, IconMaximize, IconPlus } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAllProperties } from '@/entities/property/property.hooks';
 import type { Property } from '@/entities/property/property.types';
@@ -17,11 +17,14 @@ import { PropertyFilterChips } from '@/features/property-list/PropertyFilterChip
 import { PropertyTable } from '@/features/property-list/PropertyTable';
 import { useSearch } from '@/shared/lib/search-context';
 
+const PROPERTIES_PAGE_SIZE = 5;
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: properties, isLoading, isError, error } = useAllProperties();
   const [filters, setFilters] = useState(initialTableFilterState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const { query } = useSearch();
 
   const filtered = useMemo(
@@ -31,6 +34,13 @@ export function DashboardPage() {
   const aggregates = useMemo(() => aggregateProperties(properties ?? []), [properties]);
   const selected: Property | null =
     filtered.find((p) => p.id === selectedId) ?? filtered[0] ?? null;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PROPERTIES_PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PROPERTIES_PAGE_SIZE, page * PROPERTIES_PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters, query, properties]);
 
   return (
     <>
@@ -113,11 +123,18 @@ export function DashboardPage() {
                 <Loader size="sm" />
               </Group>
             ) : (
-              <PropertyTable
-                properties={query.trim() ? filtered : filtered.slice(0, 20)}
-                selectedId={selected?.id}
-                onSelect={(p) => setSelectedId(p.id)}
-              />
+              <>
+                <PropertyTable
+                  properties={paginated}
+                  selectedId={selected?.id}
+                  onSelect={(p) => setSelectedId(p.id)}
+                />
+                {totalPages > 1 && (
+                  <Group justify="center" p="14px 20px" style={{ borderTop: '1px solid #e0e0e0' }}>
+                    <Pagination total={totalPages} value={page} onChange={setPage} size="sm" color="brandGreen" />
+                  </Group>
+                )}
+              </>
             )}
           </Paper>
         </Stack>

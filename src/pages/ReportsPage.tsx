@@ -36,16 +36,16 @@ export function ReportsPage() {
     downloadCsv(
       `sicim-relatorio-${new Date().toISOString().slice(0, 10)}.csv`,
       filtered.map((property) => ({
-        matricula: property.registrationNumber,
+        matricula: property.registrationNumber ?? '',
         descricao: property.notarialDescription,
-        endereco: `${property.address.street}, ${property.address.number} - ${property.address.neighborhood}`,
-        categoria: property.usageCategory,
-        posse: property.possessionType,
-        areaTotal: property.totalArea,
-        areaConstruida: property.builtArea,
-        valorOriginal: property.originalValue,
-        depreciacaoAcumulada: property.accumulatedDepreciation,
-        valorLiquido: property.netBookValue,
+        endereco: `${property.address.street ?? ''}, ${property.address.number ?? ''} - ${property.address.neighborhood ?? ''}`,
+        categoria: property.usageCategory ?? '',
+        posse: property.possessionType ?? '',
+        areaTotal: property.totalArea ?? 0,
+        areaConstruida: property.builtArea ?? 0,
+        valorOriginal: property.originalValue ?? 0,
+        depreciacaoAcumulada: property.accumulatedDepreciation ?? 0,
+        valorLiquido: property.netBookValue ?? 0,
         status: property.status,
       })),
     );
@@ -60,6 +60,7 @@ export function ReportsPage() {
       possessionDistribution,
       generatedBy: user?.name,
       managingUnitNameById,
+      filters,
     });
   };
 
