@@ -11,18 +11,24 @@ import { PageHeader } from '@/shared/ui/PageHeader';
 
 function propertyToFormValues(property: NonNullable<ReturnType<typeof useProperty>['data']>): PropertyFormValues {
   return {
-    registrationNumber: property.registrationNumber,
-    notaryOffice: property.notaryOffice,
+    registrationNumber: property.registrationNumber ?? '',
+    notaryOffice: property.notaryOffice ?? '',
     notarialDescription: property.notarialDescription,
-    address: { ...property.address, reference: property.address.reference ?? '' },
-    totalArea: property.totalArea,
-    builtArea: property.builtArea,
+    address: {
+      street: property.address.street ?? '',
+      number: property.address.number ?? '',
+      neighborhood: property.address.neighborhood ?? '',
+      zipCode: property.address.zipCode,
+      reference: property.address.reference ?? '',
+    },
+    totalArea: property.totalArea ?? undefined,
+    builtArea: property.builtArea ?? undefined,
     latitude: property.latitude,
     longitude: property.longitude,
     managingUnitId: property.managingUnitId,
     budgetUnit: property.budgetUnit ?? '',
-    usageCategory: property.usageCategory,
-    possessionType: property.possessionType,
+    usageCategory: property.usageCategory ?? undefined,
+    possessionType: property.possessionType ?? undefined,
     possessionContract: property.possessionContract
       ? {
           ...property.possessionContract,
@@ -30,9 +36,9 @@ function propertyToFormValues(property: NonNullable<ReturnType<typeof usePropert
           endDate: property.possessionContract.endDate ? new Date(property.possessionContract.endDate) : undefined,
         }
       : undefined,
-    acquisitionYear: property.acquisitionYear,
-    originalValue: property.originalValue,
-    publicPurpose: property.publicPurpose,
+    acquisitionYear: property.acquisitionYear ?? undefined,
+    originalValue: property.originalValue ?? undefined,
+    publicPurpose: property.publicPurpose ?? '',
   };
 }
 
@@ -80,7 +86,7 @@ export function PropertyFormPage() {
           <>
             {isEditing ? 'Editar' : 'Registrar novo'}{' '}
             <span style={{ color: "#1A5C2A", fontWeight: 600 }}>
-              bem imóvel
+              imóvel
             </span>
           </>
         }

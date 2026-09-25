@@ -58,12 +58,12 @@ export function PropertyTable({
                   {property.notarialDescription}
                 </Text>
                 <Text size="11px" c="dimmed" ff="monospace" lineClamp={1}>
-                  {property.address.street}, {property.address.number} · {property.address.neighborhood}
+                  {property.address.street ?? '—'}, {property.address.number ?? '—'} · {property.address.neighborhood ?? '—'}
                 </Text>
               </Table.Td>
               <Table.Td style={{ whiteSpace: 'nowrap' }}>
                 <Text size="11.5px" c="dimmed" ff="monospace">
-                  {property.registrationNumber}
+                  {property.registrationNumber ?? '—'}
                 </Text>
               </Table.Td>
               <Table.Td style={{ whiteSpace: 'nowrap' }}>

@@ -10,12 +10,12 @@ const possessionColor: Record<PossessionType, string> = {
   USE_PERMIT: '#999999',
 };
 
-export function PossessionBadge({ type }: { type: PossessionType }) {
+export function PossessionBadge({ type }: { type: PossessionType | null }) {
   return (
     <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <Box style={{ width: 6, height: 6, borderRadius: '50%', background: possessionColor[type] }} />
+      <Box style={{ width: 6, height: 6, borderRadius: '50%', background: type ? possessionColor[type] : '#999999' }} />
       <Text size="11px" fw={600} c="#4a4a4a">
-        {possessionTypeLabels[type]}
+        {type ? possessionTypeLabels[type] : '—'}
       </Text>
     </Box>
   );

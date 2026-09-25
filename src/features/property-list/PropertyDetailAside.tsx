@@ -1,12 +1,17 @@
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
-import { IconEdit, IconMapPin } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { IconCheck, IconEdit, IconMapPin, IconRefresh, IconX } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/entities/auth/auth-context';
 import { useManagingUnit } from '@/entities/managing-unit/managing-unit.hooks';
+import { useApproveProperty, useDeactivateProperty, useRecalculateDepreciation } from '@/entities/property/property.hooks';
 import type { Property } from '@/entities/property/property.types';
-import { formatCurrency } from '@/shared/lib/format';
+import { extractErrorMessage } from '@/shared/lib/api-client';
+import { formatArea, formatCurrency } from '@/shared/lib/format';
 import { formatUtmZone, latLngToUtm } from '@/shared/lib/utm';
 import { usageCategoryLabels } from '@/shared/types/enums';
 import { PossessionBadge } from '@/shared/ui/PossessionBadge';
+import { StatusBadge } from '@/shared/ui/StatusBadge';
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -34,8 +39,30 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export function PropertyDetailAside({ property }: { property: Property | null }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: managingUnit } = useManagingUnit(property?.managingUnitId);
   const utm = property ? latLngToUtm(property.latitude, property.longitude) : null;
+
+  const approveMutation = useApproveProperty();
+  const deactivateMutation = useDeactivateProperty();
+  const recalculateMutation = useRecalculateDepreciation();
+
+  const canApprove = user?.roles.some((role) => role === 'SICIM_ADMIN' || role === 'SICIM_APPROVER') ?? false;
+  const canRecalculate = user?.roles.includes('SICIM_ADMIN') ?? false;
+
+  const runAction = async (
+    mutateAsync: (id: string) => Promise<unknown>,
+    id: string,
+    successMessage: string,
+    errorFallback: string,
+  ) => {
+    try {
+      await mutateAsync(id);
+      notifications.show({ color: 'green', message: successMessage });
+    } catch (error) {
+      notifications.show({ color: 'red', message: extractErrorMessage(error, errorFallback) });
+    }
+  };
 
   if (!property) {
     return (
@@ -50,9 +77,12 @@ export function PropertyDetailAside({ property }: { property: Property | null })
   return (
     <Paper style={{ overflow: 'hidden' }}>
       <Box p="16px 18px" style={{ background: '#1A5C2A', color: '#fff', position: 'relative' }}>
-        <Text size="11px" c="rgba(255,255,255,0.5)" tt="uppercase" ff="monospace" mb={6} style={{ letterSpacing: 1.5 }}>
-          ⌗ {property.registrationNumber} · {property.notaryOffice}
-        </Text>
+        <Group justify="space-between" mb={6} wrap="nowrap">
+          <Text size="11px" c="rgba(255,255,255,0.5)" tt="uppercase" ff="monospace" style={{ letterSpacing: 1.5 }}>
+            ⌗ {property.registrationNumber ?? 'sem matrícula'} · {property.notaryOffice ?? '—'}
+          </Text>
+          <StatusBadge status={property.status} />
+        </Group>
         <Text
           fw={700}
           mb={6}
@@ -74,27 +104,30 @@ export function PropertyDetailAside({ property }: { property: Property | null })
 
       <Section label="Situação Jurídica e Destinação">
         <DetailRow label="Tipo de Posse" value={<PossessionBadge type={property.possessionType} />} />
-        <DetailRow label="Categoria de Uso" value={usageCategoryLabels[property.usageCategory]} />
+        <DetailRow
+          label="Categoria de Uso"
+          value={property.usageCategory ? usageCategoryLabels[property.usageCategory] : '—'}
+        />
         <Box mt={10} pt={12} style={{ borderTop: '1px dashed #ededed' }}>
           <Text size="12.5px" c="dimmed" mb={6}>
             Finalidade
           </Text>
           <Text size="12.5px" c="#4a4a4a" style={{ lineHeight: 1.55 }}>
-            {property.publicPurpose}
+            {property.publicPurpose ?? '—'}
           </Text>
         </Box>
       </Section>
 
       <Section label="Características Físicas">
-        <DetailRow label="Área Total" value={`${property.totalArea} m²`} />
-        <DetailRow label="Área Construída" value={`${property.builtArea} m²`} />
-        <DetailRow label="Cartório" value={property.notaryOffice} />
+        <DetailRow label="Área Total" value={formatArea(property.totalArea)} />
+        <DetailRow label="Área Construída" value={formatArea(property.builtArea)} />
+        <DetailRow label="Cartório" value={property.notaryOffice ?? '—'} />
       </Section>
 
       <Section label="Vinculação Administrativa">
         <DetailRow label="Unidade Gestora" value={managingUnit?.name ?? '—'} />
         <DetailRow label="Unidade Orçamentária" value={property.budgetUnit ?? '—'} />
-        <DetailRow label="Ano de Aquisição" value={property.acquisitionYear} />
+        <DetailRow label="Ano de Aquisição" value={property.acquisitionYear ?? '—'} />
       </Section>
 
       <Box p="14px 18px" style={{ background: 'linear-gradient(135deg, #FBF6DC 0%, #f9f0d4 100%)', borderTop: '1px solid #e0e0e0', borderBottom: '1px solid #e0e0e0' }}>
@@ -119,6 +152,69 @@ export function PropertyDetailAside({ property }: { property: Property | null })
           {property.notarialDescription}
         </Text>
       </Section>
+
+      {(canApprove || canRecalculate) && property.status !== 'INACTIVE' && (
+        <Group p="14px 18px 0" gap={8}>
+          {canApprove && property.status === 'PENDING_APPROVAL' && (
+            <Button
+              flex={1}
+              color="brandGreen"
+              size="xs"
+              leftSection={<IconCheck size={13} />}
+              loading={approveMutation.isPending}
+              onClick={() =>
+                runAction(
+                  (id) => approveMutation.mutateAsync(id),
+                  property.id,
+                  'Imóvel aprovado.',
+                  'Não foi possível aprovar o imóvel.',
+                )
+              }
+            >
+              Aprovar
+            </Button>
+          )}
+          {canRecalculate && (
+            <Button
+              flex={1}
+              variant="default"
+              size="xs"
+              leftSection={<IconRefresh size={13} />}
+              loading={recalculateMutation.isPending}
+              onClick={() =>
+                runAction(
+                  (id) => recalculateMutation.mutateAsync(id),
+                  property.id,
+                  'Depreciação recalculada.',
+                  'Não foi possível recalcular a depreciação.',
+                )
+              }
+            >
+              Recalcular Depreciação
+            </Button>
+          )}
+          {canApprove && (
+            <Button
+              flex={1}
+              variant="default"
+              color="red"
+              size="xs"
+              leftSection={<IconX size={13} />}
+              loading={deactivateMutation.isPending}
+              onClick={() =>
+                runAction(
+                  (id) => deactivateMutation.mutateAsync(id),
+                  property.id,
+                  'Imóvel desativado.',
+                  'Não foi possível desativar o imóvel.',
+                )
+              }
+            >
+              Desativar
+            </Button>
+          )}
+        </Group>
+      )}
 
       <Group p="14px 18px" gap={8}>
         <Button

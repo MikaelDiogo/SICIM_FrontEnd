@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/lib/api-client';
+import { apiClient, correlationHeader, newCorrelationId } from '@/shared/lib/api-client';
 import type {
   ListPropertiesFilters,
   PagedResult,
@@ -17,28 +17,54 @@ export async function getProperty(id: string): Promise<Property> {
   return data;
 }
 
-export async function registerProperty(input: RegisterPropertyInput): Promise<Property> {
-  const { data } = await apiClient.post<Property>('/properties', input);
+export async function registerProperty(
+  input: RegisterPropertyInput,
+  correlationId = newCorrelationId(),
+): Promise<Property> {
+  const { data } = await apiClient.post<Property>('/properties', input, {
+    headers: correlationHeader(correlationId),
+  });
   return data;
 }
 
-export async function updateProperty(id: string, input: UpdatePropertyInput): Promise<Property> {
-  const { data } = await apiClient.patch<Property>(`/properties/${id}`, input);
+export async function updateProperty(
+  id: string,
+  input: UpdatePropertyInput,
+  correlationId = newCorrelationId(),
+): Promise<Property> {
+  const { data } = await apiClient.patch<Property>(`/properties/${id}`, input, {
+    headers: correlationHeader(correlationId),
+  });
   return data;
 }
 
-export async function approveProperty(id: string): Promise<Property> {
-  const { data } = await apiClient.patch<Property>(`/properties/${id}/approve`);
+export async function approveProperty(id: string, correlationId = newCorrelationId()): Promise<Property> {
+  const { data } = await apiClient.patch<Property>(
+    `/properties/${id}/approve`,
+    undefined,
+    { headers: correlationHeader(correlationId) },
+  );
   return data;
 }
 
-export async function deactivateProperty(id: string): Promise<Property> {
-  const { data } = await apiClient.patch<Property>(`/properties/${id}/deactivate`);
+export async function deactivateProperty(id: string, correlationId = newCorrelationId()): Promise<Property> {
+  const { data } = await apiClient.patch<Property>(
+    `/properties/${id}/deactivate`,
+    undefined,
+    { headers: correlationHeader(correlationId) },
+  );
   return data;
 }
 
-export async function recalculateDepreciation(id: string): Promise<Property> {
-  const { data } = await apiClient.patch<Property>(`/properties/${id}/recalculate-depreciation`);
+export async function recalculateDepreciation(
+  id: string,
+  correlationId = newCorrelationId(),
+): Promise<Property> {
+  const { data } = await apiClient.patch<Property>(
+    `/properties/${id}/recalculate-depreciation`,
+    undefined,
+    { headers: correlationHeader(correlationId) },
+  );
   return data;
 }
 
