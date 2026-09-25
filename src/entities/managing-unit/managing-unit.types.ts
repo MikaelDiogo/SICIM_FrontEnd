@@ -8,7 +8,7 @@ export interface ManagingUnit {
   createdAt: string;
 }
 
-export interface RegisterManagingUnitInput {
+export interface CreateManagingUnitInput {
   name: string;
   acronym: string;
   type: ManagingUnitType;

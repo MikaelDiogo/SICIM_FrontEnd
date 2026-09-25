@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getManagingUnit, listManagingUnits, registerManagingUnit } from './managing-unit.api';
+import { createManagingUnit, deactivateManagingUnit, getManagingUnit, listManagingUnits } from './managing-unit.api';
 
 export const managingUnitKeys = {
   all: ['managing-units'] as const,
@@ -22,12 +22,18 @@ export function useManagingUnit(id: string | undefined) {
   });
 }
 
-export function useRegisterManagingUnit() {
+export function useCreateManagingUnit() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: registerManagingUnit,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: managingUnitKeys.all });
-    },
+    mutationFn: createManagingUnit,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: managingUnitKeys.all }),
+  });
+}
+
+export function useDeactivateManagingUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deactivateManagingUnit,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: managingUnitKeys.all }),
   });
 }
