@@ -8,7 +8,7 @@ import { useAllProperties } from '@/entities/property/property.hooks';
 import type { Property } from '@/entities/property/property.types';
 import { matchesSearch } from '@/features/property-list/property-filters';
 import { useSearch } from '@/shared/lib/search-context';
-import { roleLabels } from '@/shared/types/enums';
+import { sicimRoleLabels } from '@/shared/types/enums';
 import { HEADER_ACCENT_HEIGHT, PAGE_GUTTER_X, RADIUS_MD } from './layout-constants';
 import { navItems } from './nav-items';
 
@@ -58,7 +58,7 @@ function NavRow({ compact }: { compact: boolean }) {
       </Box>
 
       <Group justify="center" gap={4} wrap="wrap" style={{ flex: 1 }}>
-        {navItems.filter((item) => !item.roles || (user?.role && item.roles.includes(user.role))).map((item) => {
+        {navItems.filter((item) => !item.roles || item.roles.some((role) => user?.roles.includes(role))).map((item) => {
           const active = location.pathname === item.to;
           const itemStyle = {
             display: 'flex',
@@ -151,7 +151,7 @@ export function AppHeader() {
   };
 
   const handleSelectSuggestion = (property: Property) => {
-    setQuery(property.registrationNumber);
+    setQuery(property.registrationNumber ?? property.notarialDescription);
     setSuggestionsOpened(false);
     goToSearchablePage();
   };
@@ -248,7 +248,7 @@ export function AppHeader() {
                         {property.notarialDescription}
                       </Text>
                       <Text size="10.5px" c="dimmed" ff="monospace" truncate>
-                        {property.registrationNumber} · {property.address.street}, {property.address.number}
+                        {property.registrationNumber ?? 'sem matrícula'} · {property.address.street ?? '—'}, {property.address.number ?? '—'}
                       </Text>
                     </Box>
                   </UnstyledButton>
@@ -264,7 +264,7 @@ export function AppHeader() {
               {user?.name ?? 'Usuário'}
             </Text>
             <Text size="11px" c="dimmed">
-              {user ? roleLabels[user.role] : ''}
+              {user ? user.roles.map((role) => sicimRoleLabels[role]).join(', ') : ''}
             </Text>
           </Box>
           <Avatar radius="xl" size={36} color="brandGold" variant="gradient" gradient={{ from: '#C8A84B', to: '#a08838' }}>

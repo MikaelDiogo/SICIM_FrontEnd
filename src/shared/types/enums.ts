@@ -67,17 +67,18 @@ export const managingUnitTypeLabels: Record<ManagingUnitType, string> = {
   FOUNDATION: 'Fundação',
 };
 
-export const Role = {
-  REGISTRATION: 'REGISTRATION',
-  VIEWER: 'VIEWER',
-  APPROVAL: 'APPROVAL',
-  ADMINISTRATION: 'ADMINISTRATION',
+// Roles do JWT do Keycloak (realm bcm-sdk), retornadas por GET /me. Ver API.md.
+export const SicimRole = {
+  ADMIN: 'SICIM_ADMIN',
+  APPROVER: 'SICIM_APPROVER',
+  REGISTRAR: 'SICIM_REGISTRAR',
+  VIEWER: 'SICIM_VIEWER',
 } as const;
-export type Role = (typeof Role)[keyof typeof Role];
+export type SicimRole = (typeof SicimRole)[keyof typeof SicimRole];
 
-export const roleLabels: Record<Role, string> = {
-  REGISTRATION: 'Cadastro',
-  VIEWER: 'Consulta',
-  APPROVAL: 'Aprovação',
-  ADMINISTRATION: 'Administração',
+export const sicimRoleLabels: Record<SicimRole, string> = {
+  SICIM_ADMIN: 'Administrador',
+  SICIM_APPROVER: 'Aprovador',
+  SICIM_REGISTRAR: 'Cadastro',
+  SICIM_VIEWER: 'Consulta',
 };

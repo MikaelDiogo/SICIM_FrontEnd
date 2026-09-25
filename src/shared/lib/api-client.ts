@@ -1,13 +1,12 @@
 import axios, { AxiosError } from 'axios';
-
-export const AUTH_TOKEN_STORAGE_KEY = 'sicim.accessToken';
+import { getFreshToken, keycloak } from './keycloak';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1/sicim',
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getFreshToken();
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`);
   }
@@ -18,15 +17,23 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.assign('/login');
-      }
+      keycloak.login();
     }
     return Promise.reject(error);
   },
 );
 
+// Uma por intenção de negócio (cadastrar/aprovar/... um imóvel) — reutilize o mesmo id
+// em todas as chamadas daquele fluxo. Fica gravado no histórico do imóvel. Ver API.md.
+export function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+export function correlationHeader(correlationId: string) {
+  return { 'X-Correlation-Id': correlationId };
+}
+
+// Corpo de erro em Problem Details (RFC 7807) com propriedade extra `message`. Ver API.md.
 export interface ApiErrorBody {
   message: string | string[];
   error?: string;

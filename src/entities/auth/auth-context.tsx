@@ -1,55 +1,78 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/lib/api-client';
-import type { AuthenticatedUser, LoginCredentials } from './auth.types';
-import { login as loginRequest } from './auth.api';
-
-const USER_STORAGE_KEY = 'sicim.user';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { initKeycloak, keycloak } from '@/shared/lib/keycloak';
+import { getMe } from './auth.api';
+import type { AuthenticatedUser } from './auth.types';
 
 interface AuthContextValue {
   user: AuthenticatedUser | null;
   isAuthenticated: boolean;
-  isLoggingIn: boolean;
-  signIn: (credentials: LoginCredentials) => Promise<void>;
-  signOut: () => void;
+  isInitializing: boolean;
+  initError: string | null;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readStoredUser(): AuthenticatedUser | null {
-  const raw = localStorage.getItem(USER_STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AuthenticatedUser;
-  } catch {
-    return null;
-  }
+function buildUser(me: Awaited<ReturnType<typeof getMe>>): AuthenticatedUser {
+  const claims = keycloak.tokenParsed as
+    | { name?: string; preferred_username?: string; email?: string }
+    | undefined;
+  return {
+    id: me.id,
+    username: me.username,
+    roles: me.roles,
+    name: claims?.name ?? claims?.preferred_username ?? me.username,
+    email: claims?.email,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthenticatedUser | null>(() => readStoredUser());
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
 
-  const signIn = useCallback(async (credentials: LoginCredentials) => {
-    setIsLoggingIn(true);
-    try {
-      const result = await loginRequest(credentials);
-      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, result.accessToken);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
-      setUser(result.user);
-    } finally {
-      setIsLoggingIn(false);
-    }
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  const signOut = useCallback(() => {
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    setUser(null);
+    initKeycloak()
+      .then(async (authenticated) => {
+        if (cancelled) return;
+        if (authenticated) {
+          const me = await getMe();
+          if (!cancelled) setUser(buildUser(me));
+        }
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Falha ao inicializar a sessão do Keycloak:', error);
+        setInitError('Não foi possível validar sua sessão. Tente novamente.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsInitializing(false);
+      });
+
+    keycloak.onAuthLogout = () => setUser(null);
+    keycloak.onAuthError = () => setInitError('Não foi possível validar sua sessão. Tente novamente.');
+    keycloak.onTokenExpired = () => {
+      keycloak.updateToken(30).catch(() => keycloak.login());
+    };
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: user !== null, isLoggingIn, signIn, signOut }),
-    [user, isLoggingIn, signIn, signOut],
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      isInitializing,
+      initError,
+      signIn: () => keycloak.login(),
+      signOut: () => keycloak.logout({ redirectUri: window.location.origin }),
+    }),
+    [user, isInitializing, initError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

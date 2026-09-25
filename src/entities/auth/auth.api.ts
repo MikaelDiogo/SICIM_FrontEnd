@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/lib/api-client';
-import type { LoginCredentials, LoginResponse } from './auth.types';
+import type { MeResponse } from './auth.types';
 
-export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse>('/auth/login', credentials);
+export async function getMe(): Promise<MeResponse> {
+  const { data } = await apiClient.get<MeResponse>('/me');
   return data;
 }
