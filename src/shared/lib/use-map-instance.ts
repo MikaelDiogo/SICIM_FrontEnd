@@ -38,7 +38,13 @@ export function useMapInstance({ center = CRATEUS_CENTER, zoom = DEFAULT_ZOOM, i
     map.on('load', () => setIsLoaded(true));
     mapRef.current = map;
 
+    // O canvas do MapLibre não acompanha sozinho mudanças de tamanho do container (ex.: o
+    // header recolhendo ao rolar) — sem isso o mapa fica com a renderização desalinhada/cortada.
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(containerRef.current);
+
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       setIsLoaded(false);

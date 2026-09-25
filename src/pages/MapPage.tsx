@@ -12,6 +12,10 @@ import { PageHeader } from '@/shared/ui/PageHeader';
 import { PropertyMap } from '@/features/map/PropertyMap';
 import { PropertyDetailAside } from '@/features/property-list/PropertyDetailAside';
 
+// AppHeader (expandido) + PageHeader — travamos a página em 1 tela (sem scroll) pra evitar
+// que o recolhimento do header ao rolar desalinhe o canvas do MapLibre no meio do caminho.
+const CHROME_HEIGHT = 224;
+
 export function MapPage() {
   const { data: properties, isLoading, isError, error } = useAllProperties();
   const [category, setCategory] = useState<UsageCategory | 'ALL'>('ALL');
@@ -34,14 +38,24 @@ export function MapPage() {
         }
       />
 
-      <Box p={`32px ${PAGE_GUTTER_X}px 60px`}>
+      <Box
+        style={{
+          height: `calc(100vh - ${CHROME_HEIGHT}px)`,
+          minHeight: 480,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          overflow: 'hidden',
+          padding: `20px ${PAGE_GUTTER_X}px 24px`,
+        }}
+      >
         {isError && (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} title="Não foi possível carregar os imóveis" mb="md">
+          <Alert color="red" icon={<IconAlertCircle size={16} />} title="Não foi possível carregar os imóveis">
             {extractErrorMessage(error)}
           </Alert>
         )}
 
-        <Paper p="14px 20px" mb="md">
+        <Paper p="14px 20px">
           <Group justify="space-between" wrap="wrap">
             <Group gap={20} wrap="wrap">
               <Box>
@@ -82,18 +96,9 @@ export function MapPage() {
           </Group>
         </Paper>
 
-        <Paper style={{ overflow: 'hidden' }}>
-          <PropertyMap properties={filtered} height="calc(100vh - 360px)" onSelect={setSelected} fitToMarkers />
+        <Paper style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <PropertyMap properties={filtered} height="100%" onSelect={setSelected} fitToMarkers />
         </Paper>
-
-        <Alert
-          mt="md"
-          variant="light"
-          color="brandGreen"
-          icon={<IconAlertCircle size={18} />}
-        >
-          Passe o mouse sobre os pins para ver detalhes rápidos. Clique para abrir a ficha completa do imóvel.
-        </Alert>
       </Box>
 
       <Drawer opened={selected !== null} onClose={() => setSelected(null)} position="right" size="420px" title="Ficha do Imóvel" padding={0}>

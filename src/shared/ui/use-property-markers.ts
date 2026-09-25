@@ -44,7 +44,7 @@ export function usePropertyMarkers({ mapRef, isLoaded, properties, onSelect, fit
             ${property.notarialDescription.slice(0, 48)}
           </div>
           <div style="font-size:11px; color:#999; font-family:'JetBrains Mono',monospace; margin-top:2px;">
-            ${property.registrationNumber} · ${formatArea(property.totalArea)}
+            ${property.registrationNumber ?? 'sem matrícula'} · ${formatArea(property.totalArea)}
           </div>
         </div>
       `);
